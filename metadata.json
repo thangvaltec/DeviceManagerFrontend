@@ -1,0 +1,5 @@
+{
+  "name": "Device Management System",
+  "description": "Japanese Enterprise Device Management System Prototype. Includes a working React dashboard simulating the requested .NET features, and a Code Viewer to inspect the generated C#, SQL, and Kotlin source code.",
+  "requestFramePermissions": []
+}
