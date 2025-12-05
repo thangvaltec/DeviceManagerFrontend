@@ -31,7 +31,7 @@ export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-xl overflow-hidden">
         <div className="bg-slate-800 px-8 py-6 text-center">
-          <h1 className="text-white text-xl font-bold">デバイス管理システム</h1>
+          <h1 className="text-white text-xl font-bold">デバイスー管理システム</h1>
           <p className="text-blue-200 text-sm mt-2 font-bold tracking-widest"> Valtec </p>
         </div>
         
@@ -81,7 +81,7 @@ export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           </button>
           
           <div className="bg-slate-50 p-3 rounded text-xs text-slate-500 mt-4 space-y-1 border border-slate-200">
-            <div className="font-bold mb-1">テスト用アカウント:</div>
+            <div className="font-bold mb-1">テストアカウント</div>
             <div className="flex justify-between">
               <span>Super Admin:</span>
               <span className="font-mono">admin / admin</span>
@@ -89,9 +89,6 @@ export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             <div className="flex justify-between">
               <span>Normal Admin:</span>
               <span className="font-mono">manager / 1234</span>
-            </div>
-            <div className="mt-2 text-slate-400 italic">
-               * ユーザー管理画面で作成したアカウントでもログイン可能です。
             </div>
           </div>
         </form>
