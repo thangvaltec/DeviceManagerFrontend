@@ -1,13 +1,57 @@
 // src/services/apiClient.ts
 // API client dùng chung cho toàn bộ frontend
 
-import { Device, DeviceLog } from "../types";
+import { Device, DeviceLog, AdminUser } from "../types";
 
 // Đọc base URL từ biến môi trường Vite
 // - Dev:   VITE_API_BASE = http://10.200.2.29:5000
 // - Prod:  VITE_API_BASE = ""  (deploy chung với backend)
 const RAW_API_BASE = import.meta.env.VITE_API_BASE || "";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
+const CURRENT_USER_KEY = "currentUser";
+
+type CurrentUser = { username: string; role: string };
+
+function saveCurrentUser(user: CurrentUser | null) {
+  if (user) {
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(CURRENT_USER_KEY);
+  }
+}
+
+function getCurrentUser(): CurrentUser | null {
+  try {
+    const raw = localStorage.getItem(CURRENT_USER_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CurrentUser;
+  } catch {
+    return null;
+  }
+}
+
+// ===== Auth =====
+async function login(username: string, password: string): Promise<CurrentUser> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Login failed");
+  }
+
+  const data = (await res.json()) as { username: string; role: string };
+  const user = { username: data.username, role: data.role };
+  saveCurrentUser(user);
+  return user;
+}
+
+function logout() {
+  saveCurrentUser(null);
+}
 
 // ==== Kiểu trả về cho API getAuthMode (BodyCamera cũng dùng) ====
 export type AuthModeResponse = {
@@ -173,8 +217,54 @@ async function getLogs(serialNo: string): Promise<DeviceLog[]> {
   }));
 }
 
-// ==== Export object api cho các page dùng y như mockBackend ====
+// ----- 8) Quan ly admin users -----
+async function getUsers(): Promise<AdminUser[]> {
+  const res = await fetch(`${API_BASE}/api/adminusers`, { method: "GET" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "getUsers failed");
+  }
+  return res.json();
+}
+
+async function createUser(username: string, role: string, password: string) {
+  const res = await fetch(`${API_BASE}/api/adminusers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, role, password }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "createUser failed");
+  }
+}
+
+async function updateUser(id: number, data: { role?: string; password?: string }) {
+  const res = await fetch(`${API_BASE}/api/adminusers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "updateUser failed");
+  }
+}
+
+async function deleteUser(id: number) {
+  const res = await fetch(`${API_BASE}/api/adminusers/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "deleteUser failed");
+  }
+}
+
+// ==== Export object api cho cac page dung y nhu mockBackend ====
 export const api = {
+  login,
+  logout,
+  getCurrentUser,
+
   getAuthModeBySerial,
   getAllDevices,
   getDevice,
@@ -182,7 +272,22 @@ export const api = {
   updateDevice,
   deleteDevice,
   getLogs,
+
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
 };
 
-// Export hàm lẻ để import trực tiếp
-export { getAllDevices, deleteDevice };
+// Export ham le de import truc tiep
+export {
+  getAllDevices,
+  deleteDevice,
+  login,
+  logout,
+  getCurrentUser,
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+};

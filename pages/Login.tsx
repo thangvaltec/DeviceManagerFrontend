@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { api } from '../services/mockBackend';
+import { api } from '../services/apiClient';
 import { Lock, User, Loader2 } from 'lucide-react';
 
 export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
@@ -14,14 +14,10 @@ export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setError('');
     setLoading(true);
     try {
-      const user = await api.login(username, password);
-      if (user) {
-        onLogin();
-      } else {
-        setError('ユーザー名またはパスワードが間違っています。');
-      }
-    } catch {
-      setError('ログイン処理中にエラーが発生しました。');
+      await api.login(username, password);
+      onLogin();
+    } catch (err: any) {
+      setError(err?.message || 'ログイン処理中にエラーが発生しました。');
     } finally {
       setLoading(false);
     }
@@ -81,18 +77,15 @@ export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           </button>
           
           <div className="bg-slate-50 p-3 rounded text-xs text-slate-500 mt-4 space-y-1 border border-slate-200">
-            <div className="font-bold mb-1">テスト用アカウント:</div>
+             <div className="flex justify-between">
+              <span>テスト用アカウント</span>
+            </div>
+
             <div className="flex justify-between">
               <span>Super Admin:</span>
-              <span className="font-mono">admin / admin</span>
+              <span className="font-mono">admin / valtec</span>
             </div>
-            <div className="flex justify-between">
-              <span>Normal Admin:</span>
-              <span className="font-mono">manager / 1234</span>
-            </div>
-            <div className="mt-2 text-slate-400 italic">
-               * ユーザー管理画面で作成したアカウントでもログイン可能です。
-            </div>
+           
           </div>
         </form>
       </div>

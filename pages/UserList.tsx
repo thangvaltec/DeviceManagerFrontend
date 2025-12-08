@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { AdminUser, UserRole } from '../types';
-import { api } from '../services/mockBackend';
+import { api } from '../services/apiClient';
 import { Plus, Trash2, UserPlus, Shield, User, Edit2, X, Lock, Save, AlertCircle } from 'lucide-react';
 
 export const UserList: React.FC = () => {

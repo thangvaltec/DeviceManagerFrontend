@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { LogOut, Server, Menu, X, UserCircle, Users } from 'lucide-react';
-import { api } from '../services/mockBackend';
+import { api } from '../services/apiClient';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,7 +35,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
       <aside className="hidden md:flex flex-col w-64 bg-slate-800 text-white shadow-xl z-20">
         <div className="p-6 border-b border-slate-700">
           <h1 className="text-xl font-bold tracking-tight">管理システム</h1>
-          <p className="text-xs text-slate-400 mt-1">Enterprise Edition</p>
+          <p className="text-xs text-slate-400 mt-1">Valtec System</p>
         </div>
         
         {currentUser && (
