@@ -10,6 +10,7 @@ interface DeviceEditProps {
   onSaved: () => void;
 }
 
+// デバイスの作成・編集フォームを司るコンポーネント。
 export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSaved }) => {
   const [formData, setFormData] = useState<Partial<Device>>({
     serialNo: '',
@@ -21,6 +22,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
   const [initializing, setInitializing] = useState(false);
   const isEdit = !!serialNo;
 
+  // 編集時は既存データを取得してフォームへ反映する。
   useEffect(() => {
     if (isEdit && serialNo) {
       setInitializing(true);
@@ -31,6 +33,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
     }
   }, [serialNo, isEdit]);
 
+  // 入力値を検証し、作成か更新のAPIを呼び出す。
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.serialNo || !formData.deviceName) return;

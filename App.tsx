@@ -14,13 +14,16 @@ type View =
   | { type: 'LOGS', serialNo: string }
   | { type: 'USER_LIST' };
 
+// 画面遷移のルートコンポーネント。ログイン状態に応じて各ページを切り替える。
 export default function App() {
   const [view, setView] = useState<View>({ type: 'LOGIN' });
 
+  // ログイン成功時にデバイス一覧へ遷移する。
   const handleLogin = () => setView({ type: 'LIST' });
+  // 明示的なログアウトでログイン画面へ戻す。
   const handleLogout = () => setView({ type: 'LOGIN' });
 
-  // Navigation Logic
+  // 現在のビュー種別に応じてページコンポーネントを選択する。
   const renderContent = () => {
     switch (view.type) {
       case 'LIST':

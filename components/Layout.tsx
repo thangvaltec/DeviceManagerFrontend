@@ -10,11 +10,13 @@ interface LayoutProps {
   onLogout: () => void;
 }
 
+// 画面全体のレイアウトとナビゲーションを統括するコンポーネント。
 export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate, onLogout }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const currentUser = api.getCurrentUser();
   const isSuperAdmin = currentUser?.role === 'super_admin';
 
+  // サイドバーの各リンクを描画し、クリックでナビゲーションを実行する。
   const NavItem = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
     <button
       onClick={() => { onNavigate(id); setMobileMenuOpen(false); }}

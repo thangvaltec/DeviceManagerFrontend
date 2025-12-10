@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { api } from '../services/apiClient';
 import { Lock, User, Loader2 } from 'lucide-react';
 
+// 管理画面へのログインフォームを提供するコンポーネント。
 export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // 認証APIへ投げてセッションを開始し、成功時に親へ通知する。
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
