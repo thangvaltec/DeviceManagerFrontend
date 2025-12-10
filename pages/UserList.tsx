@@ -139,7 +139,7 @@ export const UserList: React.FC = () => {
           <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
               <th className="px-6 py-4">ユーザー名</th>
-              <th className="px-6 py-4">権限(Role)</th>
+              <th className="px-6 py-4">権限</th>
               <th className="px-6 py-4">作成日</th>
               <th className="px-6 py-4 text-right">操作</th>
             </tr>
@@ -230,17 +230,17 @@ export const UserList: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">権限(Role)</label>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">権限</label>
                         <select 
                             value={role}
                             onChange={e => setRole(e.target.value as UserRole)}
                             className="w-full px-3 py-2 border border-slate-300 rounded outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                         >
                             <option value="admin">一般管理者(Admin)</option>
-                            <option value="super_admin">特権管理者(Super Admin)</option>
+                            <option value="super_admin">総合管理者(Super Admin)</option>
                         </select>
                         <p className="text-[10px] text-slate-400 mt-1">
-                            * Super Adminはユーザー管理画面にアクセスできます。
+                            * 総合管理者(Super Admin)はユーザー管理画面にアクセスできます。
                         </p>
                     </div>
 

@@ -106,7 +106,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
           <h3 className="text-slate-500 text-sm font-medium mb-1">登録デバイス総数</h3>
           <div className="flex items-baseline space-x-2">
             <span className="text-4xl font-bold text-slate-900">{devices.length}</span>
-            <span className="text-slate-400 text-sm">件</span>
+            <span className="text-slate-400 text-sm">台</span>
           </div>
         </div>
         
@@ -114,7 +114,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
           <h3 className="text-slate-500 text-sm font-medium mb-1">稼働中</h3>
           <div className="flex items-baseline space-x-2">
             <span className="text-4xl font-bold text-green-600">{devices.filter(d => d.isActive).length}</span>
-            <span className="text-slate-400 text-sm">件</span>
+            <span className="text-slate-400 text-sm">台</span>
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="Device ID / HW Serial で検索..." 
+            placeholder="シリアル番号　/ 端末名 で検索..." 
             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -153,7 +153,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4">Device ID / Serial No</th>
+                  <th className="px-6 py-4">シリアル番号</th>
                   <th className="px-6 py-4">端末名</th>
                   <th className="px-6 py-4">認証モード</th>
                   <th className="px-6 py-4">状態</th>

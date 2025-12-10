@@ -1,18 +1,18 @@
-﻿// src/services/apiClient.ts
-// API client dﾃｹng chung cho toﾃn b盻・frontend
+// src/services/apiClient.ts
+// フロントエンド共通のAPIクライアント
 
 import { Device, DeviceLog, AdminUser } from "../types";
 
-// ﾄ雪ｻ皇 base URL t盻ｫ bi蘯ｿn mﾃｴi trﾆｰ盻拵g Vite
-// - Dev:   VITE_API_BASE = http://10.200.2.29:5000
-// - Prod:  VITE_API_BASE = ""  (deploy chung v盻嬖 backend)
+// Vite環境変数からAPIベースURLを読み取る
+// - Dev:  VITE_API_BASE = http://10.200.2.29:5000
+// - Prod: VITE_API_BASE = ""  (バックエンドと同一ホスト想定)
 const RAW_API_BASE = import.meta.env.VITE_API_BASE || "";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 const CURRENT_USER_KEY = "currentUser";
 
 type CurrentUser = { username: string; role: string };
 
-// ローカルストレージへ現在のユーザー情報を保存・クリアする。
+// ローカルストレージへ現在ユーザー情報を保存／削除する。
 function saveCurrentUser(user: CurrentUser | null) {
   if (user) {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
@@ -32,8 +32,8 @@ function getCurrentUser(): CurrentUser | null {
   }
 }
 
-// ===== Auth =====
-// 認証APIにリクエストを送り、成功時はユーザー情報を永続化する。
+//  Auth APIへログインリクエストを送り、成功時にユーザー情報を保存する。
+// 認証APIへリクエストし、成功時にユーザー情報を保存する。
 async function login(username: string, password: string): Promise<CurrentUser> {
   const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: "POST",
@@ -57,14 +57,14 @@ function logout() {
   saveCurrentUser(null);
 }
 
-// ==== Ki盻ブ tr蘯｣ v盻・cho API getAuthMode (BodyCamera cﾅｩng dﾃｹng) ====
+// ==== Echo API getAuthMode の戻り値 ====
 export type AuthModeResponse = {
   authMode: number;
   deviceName: string;
   isActive: boolean;
 };
 
-// シリアルNoを受け取り、デバイスの認証モードを問い合わせる。
+// シリアルNoを基にデバイスの認証モードを問い合わせる。
 async function getAuthModeBySerial(serialNo: string): Promise<AuthModeResponse> {
   const res = await fetch(`${API_BASE}/api/device/getAuthMode`, {
     method: "POST",
@@ -80,7 +80,7 @@ async function getAuthModeBySerial(serialNo: string): Promise<AuthModeResponse> 
   return res.json();
 }
 
-// 全デバイスを取得してフロントエンドのDevice型へマップする。
+// 全デバイスを取得し、フロントエンドのDevice型へ整形する。
 async function getAllDevices(): Promise<Device[]> {
   const res = await fetch(`${API_BASE}/api/device`, {
     method: "GET",
@@ -93,7 +93,7 @@ async function getAllDevices(): Promise<Device[]> {
 
   const json = await res.json();
 
-  // Map t盻ｫ DB 竊・ki盻ブ Device trﾃｪn frontend
+  // DBの形からフロント用Device型へマッピング
   return (json as any[]).map((d) => ({
     serialNo: d.serialNo,
     deviceName: d.deviceName,
@@ -103,14 +103,14 @@ async function getAllDevices(): Promise<Device[]> {
   }));
 }
 
-// シリアルNoで1件のデバイスを検索する（暫定で全件取得後フィルタ）。
+// シリアルNoで1件のデバイスを検索する（暫定的に全件取得してフィルタ）。
 async function getDevice(serialNo: string): Promise<Device | undefined> {
-  // T蘯｡m th盻拱: l蘯･y toﾃn b盻・r盻妬 filter (s盻・lﾆｰ盻｣ng thi蘯ｿt b盻・khﾃｴng nhi盻「 nﾃｪn OK)
+  // 台数が少ない前提で全件取得後にフィルタ
   const list = await getAllDevices();
   return list.find((d) => d.serialNo === serialNo);
 }
 
-// 新規デバイスを作成し、API応答をフロントの型へ整形して返す。
+// 新規デバイスを作成し、API応答をフロント用の型に整形して返す。
 async function createDevice(
   data: Omit<Device, "lastUpdated">
 ): Promise<Device> {
@@ -141,13 +141,12 @@ async function createDevice(
   };
 }
 
-// ----- 5) Update device (DeviceEdit chế độ edit) -----
-// 既存デバイスを更新し、更新後の値を返却する。
+// 既存デバイスを更新し、更新後の値を返す。
 async function updateDevice(
   serialNo: string,
   data: Partial<Device>
 ): Promise<Device> {
-  // body g盻ｭi lﾃｪn ph蘯｣i ﾄ妥ｺng v盻嬖 model C# Device
+  // C# Deviceモデルに合わせたペイロード
   const payload = {
     serialNo,
     deviceName: data.deviceName,
@@ -211,7 +210,7 @@ async function getLogs(serialNo: string): Promise<DeviceLog[]> {
 
   const json = await res.json();
 
-  // Map từ DB DeviceLog (SerialNo, Action, CreatedAt, ...) → DeviceLog frontend
+  // DBのDeviceLogをフロントのDeviceLog型にマップ
   return (json as any[]).map((log) => ({
     id: log.id ?? 0,
     serialNo: log.serialNo ?? "",
@@ -222,7 +221,7 @@ async function getLogs(serialNo: string): Promise<DeviceLog[]> {
   }));
 }
 
-// ----- 8) Quan ly admin users -----
+// ----- 8) 管理ユーザー系API -----
 // 管理者ユーザー一覧を取得する。
 async function getUsers(): Promise<AdminUser[]> {
   const res = await fetch(`${API_BASE}/api/adminusers`, { method: "GET" });
@@ -246,7 +245,7 @@ async function createUser(username: string, role: string, password: string) {
   }
 }
 
-// 役割やパスワードなどの管理ユーザー情報を更新する。
+// 権限やパスワードなど管理ユーザー情報を更新する。
 async function updateUser(id: number, data: { role?: string; password?: string }) {
   const res = await fetch(`${API_BASE}/api/adminusers/${id}`, {
     method: "PUT",
@@ -268,7 +267,7 @@ async function deleteUser(id: number) {
   }
 }
 
-// ==== Export object api cho cac page dung y nhu mockBackend ====
+// ==== ページ側でそのまま使うapiオブジェクト ====
 export const api = {
   login,
   logout,
@@ -288,7 +287,7 @@ export const api = {
   deleteUser,
 };
 
-// Export ham le de import truc tiep
+// 必要に応じて個別関数として再エクスポート
 export {
   getAllDevices,
   deleteDevice,
@@ -300,6 +299,4 @@ export {
   updateUser,
   deleteUser,
 };
-
-
 

@@ -77,7 +77,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
             {/* Serial No / Device ID */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Device ID / Serial No
+                シリアルNo
               </label>
               <input
                 type="text"
@@ -91,7 +91,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
                 placeholder="例: 222222 または KF5KW..."
               />
               <p className="text-[10px] text-slate-400 mt-1">
-                * 手入力ID、またはHWシリアル番号を入力してください。
+                * 手入力ID、またはシリアル番号を入力してください。
               </p>
             </div>
 
