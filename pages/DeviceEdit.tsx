@@ -77,7 +77,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
             {/* Serial No / Device ID */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                シリアルNo
+                シリアル番号
               </label>
               <input
                 type="text"
