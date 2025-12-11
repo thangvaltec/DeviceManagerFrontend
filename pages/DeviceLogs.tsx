@@ -8,10 +8,12 @@ interface DeviceLogsProps {
   onBack: () => void;
 }
 
+// デバイスごとの操作履歴を一覧表示するコンポーネント。
 export const DeviceLogs: React.FC<DeviceLogsProps> = ({ serialNo, onBack }) => {
   const [logs, setLogs] = useState<DeviceLog[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 表示対象のシリアルNoをキーにログを取得する。
   useEffect(() => {
     setLoading(true);
     api.getLogs(serialNo).then(data => {
@@ -20,6 +22,7 @@ export const DeviceLogs: React.FC<DeviceLogsProps> = ({ serialNo, onBack }) => {
     });
   }, [serialNo]);
 
+  // 変更種別に応じた色付きバッジを返す。
   const getChangeTypeBadge = (type: string) => {
     switch(type) {
       case 'CREATE': return <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded font-mono">CREATE</span>;

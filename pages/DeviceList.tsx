@@ -10,11 +10,13 @@ interface DeviceListProps {
   onViewLogs: (serialNo: string) => void;
 }
 
+// デバイス一覧と基本操作（作成・編集・削除）を提供する。
 export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onViewLogs }) => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // バックエンドから最新のデバイス一覧を取得し、状態に反映する。
   const loadDevices = async () => {
     setLoading(true);
     try {
@@ -22,16 +24,18 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
       setDevices(data);
     } catch (e) {
       console.error('getAllDevices error:', e);
-      alert("データの取得に失敗しました");
+      alert("デバイスの取得に失敗しました");
     } finally {
       setLoading(false);
     }
   };
 
+  // 初回マウント時に一覧をロードする。
   useEffect(() => {
     loadDevices();
   }, []);
 
+  // 削除確認を挟み、完了後に一覧をリロードする。
   const handleDelete = async (serialNo: string) => {
     if (window.confirm(`${serialNo} を削除してもよろしいですか？`)) {
       await deleteDevice(serialNo);
@@ -39,6 +43,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
     }
   };
 
+  // 認証モードごとの表示バッジを生成し、視認性を高める。
   const getAuthModeLabel = (mode: AuthMode) => {
     switch (mode) {
       case AuthMode.Face: 
@@ -84,7 +89,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">デバイス一覧</h2>
-          <p className="text-slate-500 text-sm mt-1">登録されている認証デバイスの管理を行います。</p>
+          <p className="text-slate-500 text-sm mt-1">登録済み認証デバイスの管理を行います。</p>
         </div>
         <button 
           onClick={onCreate}
@@ -105,7 +110,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
           </div>
         </div>
         
-         <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-center h-32 opacity-60">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-center h-32 opacity-60">
           <h3 className="text-slate-500 text-sm font-medium mb-1">稼働中</h3>
           <div className="flex items-baseline space-x-2">
             <span className="text-4xl font-bold text-green-600">{devices.filter(d => d.isActive).length}</span>
@@ -120,7 +125,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="Device ID / HW Serial または端末名で検索..." 
+            placeholder="シリアル番号　/ 端末名 で検索..." 
             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -128,7 +133,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
         </div>
         <button onClick={loadDevices} className="flex items-center justify-center space-x-2 px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-50 text-slate-600 text-sm">
           <RefreshCw size={16} />
-          <span>更新</span>
+          <span>再読み込み</span>
         </button>
       </div>
 
@@ -141,14 +146,14 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
           </div>
         ) : filteredDevices.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
-            データが見つかりません
+            デバイスが見つかりません
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4">Device ID / Serial No</th>
+                  <th className="px-6 py-4">シリアル番号</th>
                   <th className="px-6 py-4">端末名</th>
                   <th className="px-6 py-4">認証モード</th>
                   <th className="px-6 py-4">状態</th>
@@ -169,12 +174,12 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
                       {device.isActive ? (
                         <span className="flex items-center text-green-600 text-xs font-medium">
                           <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                          有効
+                          稼働中
                         </span>
                       ) : (
                         <span className="flex items-center text-slate-400 text-xs font-medium">
                           <span className="w-2 h-2 bg-slate-300 rounded-full mr-2"></span>
-                          無効
+                          停止
                         </span>
                       )}
                     </td>
@@ -216,3 +221,4 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
     </div>
   );
 };
+

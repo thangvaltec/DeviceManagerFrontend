@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { AdminUser, UserRole } from '../types';
-import { api } from '../services/mockBackend';
+import { api } from '../services/apiClient';
 import { Plus, Trash2, UserPlus, Shield, User, Edit2, X, Lock, Save, AlertCircle } from 'lucide-react';
 
+// 管理者アカウントの一覧表示とCRUD操作を行うコンポーネント。
 export const UserList: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,7 @@ export const UserList: React.FC = () => {
   
   const [formError, setFormError] = useState('');
 
+  // APIから管理者一覧を取得し、表示用の状態を整える。
   const loadUsers = async () => {
     setLoading(true);
     try {
@@ -37,6 +39,7 @@ export const UserList: React.FC = () => {
     loadUsers();
   }, []);
 
+  // 新規作成用にフォームを初期化してモーダルを開く。
   const openCreateModal = () => {
       setModalMode('create');
       setEditId(null);
@@ -48,6 +51,7 @@ export const UserList: React.FC = () => {
       setIsModalOpen(true);
   };
 
+  // 既存ユーザーを編集するためにフォームへ値をセットする。
   const openEditModal = (user: AdminUser) => {
       setModalMode('edit');
       setEditId(user.id);
@@ -59,8 +63,10 @@ export const UserList: React.FC = () => {
       setIsModalOpen(true);
   };
 
+  // 入力を破棄してモーダルを閉じる。
   const closeModal = () => setIsModalOpen(false);
 
+  // 削除確認を取り、成功時に一覧を再取得する。
   const handleDelete = async (id: number, username: string) => {
     if (window.confirm(`ユーザー「${username}」を削除してもよろしいですか？\nこの操作は取り消せません。`)) {
       try {
@@ -72,6 +78,7 @@ export const UserList: React.FC = () => {
     }
   };
 
+  // 入力検証を行い、作成または更新APIを呼び出す。
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -114,7 +121,7 @@ export const UserList: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-slate-800">ユーザー管理</h2>
           <p className="text-slate-500 text-sm mt-1">
-            管理者アカウントの作成・編集・削除を行います。
+            管理アカウントの作成・編集・削除を行います。
           </p>
         </div>
         <button 
@@ -132,7 +139,7 @@ export const UserList: React.FC = () => {
           <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
               <th className="px-6 py-4">ユーザー名</th>
-              <th className="px-6 py-4">権限 (Role)</th>
+              <th className="px-6 py-4">権限</th>
               <th className="px-6 py-4">作成日</th>
               <th className="px-6 py-4 text-right">操作</th>
             </tr>
@@ -223,17 +230,17 @@ export const UserList: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">権限 (Role)</label>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">権限</label>
                         <select 
                             value={role}
                             onChange={e => setRole(e.target.value as UserRole)}
                             className="w-full px-3 py-2 border border-slate-300 rounded outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                         >
-                            <option value="admin">一般管理者 (Admin)</option>
-                            <option value="super_admin">特権管理者 (Super Admin)</option>
+                            <option value="admin">一般管理者(Admin)</option>
+                            <option value="super_admin">総合管理者(Super Admin)</option>
                         </select>
                         <p className="text-[10px] text-slate-400 mt-1">
-                            * Super Adminはユーザー管理機能にアクセスできます。
+                            * 総合管理者(Super Admin)はユーザー管理画面にアクセスできます。
                         </p>
                     </div>
 
@@ -273,3 +280,4 @@ export const UserList: React.FC = () => {
     </div>
   );
 };
+

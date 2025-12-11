@@ -10,6 +10,7 @@ interface DeviceEditProps {
   onSaved: () => void;
 }
 
+// デバイスの作成・編集フォームを司るコンポーネント。
 export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSaved }) => {
   const [formData, setFormData] = useState<Partial<Device>>({
     serialNo: '',
@@ -21,6 +22,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
   const [initializing, setInitializing] = useState(false);
   const isEdit = !!serialNo;
 
+  // 編集時は既存データを取得してフォームへ反映する。
   useEffect(() => {
     if (isEdit && serialNo) {
       setInitializing(true);
@@ -31,6 +33,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
     }
   }, [serialNo, isEdit]);
 
+  // 入力値を検証し、作成か更新のAPIを呼び出す。
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.serialNo || !formData.deviceName) return;
@@ -74,7 +77,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
             {/* Serial No / Device ID */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Device ID / Serial No
+                シリアル番号
               </label>
               <input
                 type="text"
@@ -88,7 +91,7 @@ export const DeviceEdit: React.FC<DeviceEditProps> = ({ serialNo, onBack, onSave
                 placeholder="例: 222222 または KF5KW..."
               />
               <p className="text-[10px] text-slate-400 mt-1">
-                * 手入力ID、またはHWシリアル番号を入力してください。
+                * 手入力ID、またはシリアル番号を入力してください。
               </p>
             </div>
 

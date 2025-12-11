@@ -27,9 +27,11 @@ let allUsers: MockUser[] = [
 // Session State
 let currentUser: User | null = null;
 
+// 疑似的なネットワーク遅延を挿入し、実サービスのレスポンス時間を再現する。
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const api = {
+  // モック認証: ユーザー名とパスワードを照合し、セッションを保持する。
   login: async (username: string, password: string): Promise<User | null> => {
     await delay(600);
     
@@ -45,26 +47,31 @@ export const api = {
     return null;
   },
 
+  // セッションをクリアしてログアウトする。
   logout: async () => {
     currentUser = null;
   },
 
+  // 現在のログインユーザー情報を返却する。
   getCurrentUser: () => currentUser,
 
   // --- Device APIs ---
 
+  // 全デバイス一覧を返し、未ログイン時は認可エラーにする。
   getDevices: async (): Promise<Device[]> => {
     await delay(300);
     if (!currentUser) throw new Error("Unauthorized");
     return [...allDevices];
   },
 
+  // シリアルNoで単一デバイスを検索する。
   getDevice: async (serialNo: string): Promise<Device | undefined> => {
     await delay(200);
     if (!currentUser) throw new Error("Unauthorized");
     return allDevices.find(d => d.serialNo === serialNo);
   },
 
+  // 重複チェックを行いながらデバイスを新規登録する。
   createDevice: async (device: Device): Promise<void> => {
     await delay(500);
     if (!currentUser) throw new Error("Unauthorized");
@@ -78,6 +85,7 @@ export const api = {
     api.logChange(device.serialNo, 'CREATE', `デバイス登録: ${device.deviceName}`);
   },
 
+  // 既存デバイスの設定を更新し、更新ログを残す。
   updateDevice: async (serialNo: string, updated: Partial<Device>): Promise<void> => {
     await delay(500);
     if (!currentUser) throw new Error("Unauthorized");
@@ -90,6 +98,7 @@ export const api = {
     api.logChange(serialNo, 'UPDATE', `更新: ${JSON.stringify(updated)}`);
   },
 
+  // デバイスを削除し、削除ログを記録する。
   deleteDevice: async (serialNo: string): Promise<void> => {
     await delay(500);
     if (!currentUser) throw new Error("Unauthorized");
@@ -102,6 +111,7 @@ export const api = {
     }
   },
 
+  // 指定デバイスの変更履歴を新しい順で返す。
   getLogs: async (serialNo: string): Promise<DeviceLog[]> => {
     await delay(300);
     if (!currentUser) throw new Error("Unauthorized");
@@ -111,6 +121,7 @@ export const api = {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   },
 
+  // 変更種別と詳細をログ一覧に追加する。
   logChange: (serialNo: string, type: 'CREATE' | 'UPDATE' | 'DELETE', details: string) => {
     if (!currentUser) return;
     allLogs.push({
@@ -125,6 +136,7 @@ export const api = {
 
   // --- User Management APIs (Super Admin Only) ---
   
+  // スーパ管理者のみが全ユーザー一覧を取得できる。
   getUsers: async (): Promise<AdminUser[]> => {
     await delay(300);
     if (!currentUser || currentUser.role !== 'super_admin') throw new Error("Forbidden");
@@ -132,6 +144,7 @@ export const api = {
     return allUsers.map(({ password, ...u }) => u);
   },
 
+  // 新規管理ユーザーを作成し、重複ユーザー名を防ぐ。
   createUser: async (username: string, role: UserRole, password: string): Promise<void> => {
     await delay(500);
     if (!currentUser || currentUser.role !== 'super_admin') throw new Error("Forbidden");
@@ -149,6 +162,7 @@ export const api = {
     });
   },
 
+  // 役割やパスワードなどのユーザー情報を更新する。
   updateUser: async (id: number, data: { role?: UserRole, password?: string }): Promise<void> => {
     await delay(400);
     if (!currentUser || currentUser.role !== 'super_admin') throw new Error("Forbidden");
@@ -165,6 +179,7 @@ export const api = {
     if (data.password) allUsers[userIndex].password = data.password;
   },
 
+  // 自身やrootアカウントを削除しないよう検証した上で削除する。
   deleteUser: async (id: number): Promise<void> => {
      await delay(400);
      if (!currentUser || currentUser.role !== 'super_admin') throw new Error("Forbidden");

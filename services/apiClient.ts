@@ -1,22 +1,70 @@
 // src/services/apiClient.ts
-// API client dùng chung cho toàn bộ frontend
+// フロントエンド共通のAPIクライアント
 
-import { Device, DeviceLog } from "../types";
+import { Device, DeviceLog, AdminUser } from "../types";
 
-// Đọc base URL từ biến môi trường Vite
-// - Dev:   VITE_API_BASE = http://10.200.2.29:5000
-// - Prod:  VITE_API_BASE = ""  (deploy chung với backend)
+// Vite環境変数からAPIベースURLを読み取る
+// - Dev:  VITE_API_BASE = http://10.200.2.29:5000
+// - Prod: VITE_API_BASE = ""  (バックエンドと同一ホスト想定)
 const RAW_API_BASE = import.meta.env.VITE_API_BASE || "";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
+const CURRENT_USER_KEY = "currentUser";
 
-// ==== Kiểu trả về cho API getAuthMode (BodyCamera cũng dùng) ====
+type CurrentUser = { username: string; role: string };
+
+// ローカルストレージへ現在ユーザー情報を保存／削除する。
+function saveCurrentUser(user: CurrentUser | null) {
+  if (user) {
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(CURRENT_USER_KEY);
+  }
+}
+
+// ローカルストレージからログイン済みユーザーを復元する。
+function getCurrentUser(): CurrentUser | null {
+  try {
+    const raw = localStorage.getItem(CURRENT_USER_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CurrentUser;
+  } catch {
+    return null;
+  }
+}
+
+//  Auth APIへログインリクエストを送り、成功時にユーザー情報を保存する。
+// 認証APIへリクエストし、成功時にユーザー情報を保存する。
+async function login(username: string, password: string): Promise<CurrentUser> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Login failed");
+  }
+
+  const data = (await res.json()) as { username: string; role: string };
+  const user = { username: data.username, role: data.role };
+  saveCurrentUser(user);
+  return user;
+}
+
+// クライアント側のセッション情報を破棄する。
+function logout() {
+  saveCurrentUser(null);
+}
+
+// ==== Echo API getAuthMode の戻り値 ====
 export type AuthModeResponse = {
   authMode: number;
   deviceName: string;
   isActive: boolean;
 };
 
-// ----- 1) BodyCamera & UI: Lấy AuthMode theo serialNo -----
+// シリアルNoを基にデバイスの認証モードを問い合わせる。
 async function getAuthModeBySerial(serialNo: string): Promise<AuthModeResponse> {
   const res = await fetch(`${API_BASE}/api/device/getAuthMode`, {
     method: "POST",
@@ -32,7 +80,7 @@ async function getAuthModeBySerial(serialNo: string): Promise<AuthModeResponse> 
   return res.json();
 }
 
-// ----- 2) Lấy danh sách toàn bộ device (cho DeviceList) -----
+// 全デバイスを取得し、フロントエンドのDevice型へ整形する。
 async function getAllDevices(): Promise<Device[]> {
   const res = await fetch(`${API_BASE}/api/device`, {
     method: "GET",
@@ -45,7 +93,7 @@ async function getAllDevices(): Promise<Device[]> {
 
   const json = await res.json();
 
-  // Map từ DB → kiểu Device trên frontend
+  // DBの形からフロント用Device型へマッピング
   return (json as any[]).map((d) => ({
     serialNo: d.serialNo,
     deviceName: d.deviceName,
@@ -55,14 +103,14 @@ async function getAllDevices(): Promise<Device[]> {
   }));
 }
 
-// ----- 3) Lấy thông tin 1 device theo serialNo (cho DeviceEdit) -----
+// シリアルNoで1件のデバイスを検索する（暫定的に全件取得してフィルタ）。
 async function getDevice(serialNo: string): Promise<Device | undefined> {
-  // Tạm thời: lấy toàn bộ rồi filter (số lượng thiết bị không nhiều nên OK)
+  // 台数が少ない前提で全件取得後にフィルタ
   const list = await getAllDevices();
   return list.find((d) => d.serialNo === serialNo);
 }
 
-// ----- 4) Tạo mới device (từ màn DeviceEdit khi create) -----
+// 新規デバイスを作成し、API応答をフロント用の型に整形して返す。
 async function createDevice(
   data: Omit<Device, "lastUpdated">
 ): Promise<Device> {
@@ -93,12 +141,12 @@ async function createDevice(
   };
 }
 
-// ----- 5) Update device (DeviceEdit – chế độ edit) -----
+// 既存デバイスを更新し、更新後の値を返す。
 async function updateDevice(
   serialNo: string,
   data: Partial<Device>
 ): Promise<Device> {
-  // body gửi lên phải đúng với model C# Device
+  // C# Deviceモデルに合わせたペイロード
   const payload = {
     serialNo,
     deviceName: data.deviceName,
@@ -131,7 +179,7 @@ async function updateDevice(
   };
 }
 
-// ----- 6) Xóa device (nếu backend có DELETE /api/device/{serialNo}) -----
+// 指定デバイスを削除する（成功時はレスポンスボディなし）。
 async function deleteDevice(serialNo: string): Promise<void> {
   const res = await fetch(
     `${API_BASE}/api/device/${encodeURIComponent(serialNo)}`,
@@ -146,7 +194,7 @@ async function deleteDevice(serialNo: string): Promise<void> {
   }
 }
 
-// ----- 7) Lấy log thay đổi thiết bị (DeviceLogs) -----
+// デバイス変更履歴を取得し、フロント用ログ型へマッピングする。
 async function getLogs(serialNo: string): Promise<DeviceLog[]> {
   const res = await fetch(
     `${API_BASE}/api/device/logs/${encodeURIComponent(serialNo)}`,
@@ -162,7 +210,7 @@ async function getLogs(serialNo: string): Promise<DeviceLog[]> {
 
   const json = await res.json();
 
-  // Map từ DB DeviceLog (SerialNo, Action, CreatedAt, ...) → DeviceLog frontend
+  // DBのDeviceLogをフロントのDeviceLog型にマップ
   return (json as any[]).map((log) => ({
     id: log.id ?? 0,
     serialNo: log.serialNo ?? "",
@@ -173,8 +221,58 @@ async function getLogs(serialNo: string): Promise<DeviceLog[]> {
   }));
 }
 
-// ==== Export object api cho các page dùng y như mockBackend ====
+// ----- 8) 管理ユーザー系API -----
+// 管理者ユーザー一覧を取得する。
+async function getUsers(): Promise<AdminUser[]> {
+  const res = await fetch(`${API_BASE}/api/adminusers`, { method: "GET" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "getUsers failed");
+  }
+  return res.json();
+}
+
+// 新規管理ユーザーを作成する。
+async function createUser(username: string, role: string, password: string) {
+  const res = await fetch(`${API_BASE}/api/adminusers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, role, password }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "createUser failed");
+  }
+}
+
+// 権限やパスワードなど管理ユーザー情報を更新する。
+async function updateUser(id: number, data: { role?: string; password?: string }) {
+  const res = await fetch(`${API_BASE}/api/adminusers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "updateUser failed");
+  }
+}
+
+// 管理ユーザーを削除する。
+async function deleteUser(id: number) {
+  const res = await fetch(`${API_BASE}/api/adminusers/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "deleteUser failed");
+  }
+}
+
+// ==== ページ側でそのまま使うapiオブジェクト ====
 export const api = {
+  login,
+  logout,
+  getCurrentUser,
+
   getAuthModeBySerial,
   getAllDevices,
   getDevice,
@@ -182,7 +280,23 @@ export const api = {
   updateDevice,
   deleteDevice,
   getLogs,
+
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
 };
 
-// Export hàm lẻ để import trực tiếp
-export { getAllDevices, deleteDevice };
+// 必要に応じて個別関数として再エクスポート
+export {
+  getAllDevices,
+  deleteDevice,
+  login,
+  logout,
+  getCurrentUser,
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+};
+
