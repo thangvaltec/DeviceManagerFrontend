@@ -34,11 +34,11 @@ function getCurrentUser(): CurrentUser | null {
 
 // ===== Auth =====
 // 認証APIにリクエストを送り、成功時はユーザー情報を永続化する。
-async function login(username: string, password: string): Promise<CurrentUser> {
+async function login(contractClientCd: string, username: string, password: string): Promise<CurrentUser> {
   const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ contractClientCd, username, password }),
   });
 
   if (!res.ok) {
