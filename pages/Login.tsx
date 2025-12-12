@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { api } from '../services/apiClient';
-import { Lock, User, Loader2 } from 'lucide-react';
+import { Lock, User, Building2, Loader2 } from 'lucide-react';
 
 // 管理画面へのログインフォームを提供するコンポーネント。
 export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+  const [contractClientCd, setContractClientCd] = useState('9999');
   const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('valtec');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +17,7 @@ export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setError('');
     setLoading(true);
     try {
-      await api.login(username, password);
+      await api.login(contractClientCd, username, password);
       onLogin();
     } catch (err: any) {
       setError(err?.message || 'ログイン処理中にエラーが発生しました。');
@@ -39,6 +40,21 @@ export const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
               {error}
             </div>
           )}
+
+           <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">契約顧客コード</label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                placeholder="9999"
+                value={contractClientCd}
+                onChange={(e) => setContractClientCd(e.target.value)}
+                required
+              />
+            </div>
+          </div>
           
           <div className="space-y-1">
             <label className="text-sm font-medium text-slate-700">ユーザー名</label>
