@@ -199,7 +199,7 @@ const CustomDatePicker = ({ value, onChange }: { value: string; onChange: (date:
               onClick={handleToday}
               className="text-xs text-blue-600 hover:text-blue-800 font-bold py-1 px-3 rounded hover:bg-blue-50 transition-colors"
             >
-              今日 (Today)
+              今日
             </button>
           </div>
         </div>
@@ -240,12 +240,12 @@ const AuthDetailModal = ({ log, onClose }: { log: AuthLog; onClose: () => void }
             <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-green-500/50"></div>
 
             <Camera size={32} className="mb-2 z-10 text-slate-400" />
-            <span className="text-xs z-10">Snapshot</span>
+            <span className="text-xs z-10">画像</span>
           </div>
 
           <div className="mt-4 w-full">
             <div className="flex justify-between text-xs text-slate-400 font-mono border-t border-slate-700 pt-2">
-              <span>CAM_01</span>
+              <span>時間</span>
               <span>{formatTime(log.timestamp)}</span>
             </div>
           </div>
@@ -258,10 +258,10 @@ const AuthDetailModal = ({ log, onClose }: { log: AuthLog; onClose: () => void }
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-slate-800">認証ログ詳細</h3>
                 <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-mono">
-                  #{log.id}
+                  #ID{log.id}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">取引データ</p>
+              <p className="text-xs text-slate-500 mt-1">データ取得</p>
             </div>
             <button
               onClick={onClose}
@@ -285,7 +285,7 @@ const AuthDetailModal = ({ log, onClose }: { log: AuthLog; onClose: () => void }
               </div>
               <div>
                 <p className={`font-bold ${log.isSuccess ? 'text-green-800' : 'text-red-800'}`}>
-                  {log.isSuccess ? '認証成功 (Authorized)' : '認証失敗 (Denied)'}
+                  {log.isSuccess ? '認証成功 ' : '認証失敗 '}
                 </p>
                 {!log.isSuccess && log.errorMessage && (
                   <p className="text-xs text-red-600 mt-0.5">{log.errorMessage}</p>
@@ -328,7 +328,7 @@ const AuthDetailModal = ({ log, onClose }: { log: AuthLog; onClose: () => void }
                 </div>
               </div>
               <div className="col-span-2 p-3 bg-slate-50 rounded border border-slate-100">
-                <span className="text-xs text-slate-400 block mb-1">デバイス/場所</span>
+                <span className="text-xs text-slate-400 block mb-1">デバイスシリアル番号</span>
                 <p className="font-medium text-slate-700">{log.deviceName}</p>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">{log.serialNo}</p>
               </div>
@@ -414,8 +414,9 @@ export const AuthHistory: React.FC = () => {
    * 現在フィルター適用中のログをCSV形式でダウンロード
    * BOM付きUTF-8エンコーディングでExcelとの互換性を確保
    */
+  //CSV出力DeviceNameを非表示、今後追加するときに対応する
   const downloadCSV = () => {
-    const headers = ['ID', 'Time', 'UserID', 'UserName', 'DeviceName', 'Serial', 'AuthMode', 'Status', 'Message'];
+    const headers = ['ID', 'Time', 'UserID', 'UserName', /*'DeviceName',*/ 'DeviceSerialNo', 'AuthMode', 'Result', 'Message'];
     const rows = filteredLogs.map((log) => {
       // @ts-ignore
       const userName = log.userName || '';
@@ -424,10 +425,10 @@ export const AuthHistory: React.FC = () => {
         formatDateTime(log.timestamp),
         log.userId,
         userName,
-        log.deviceName,
+        //log.deviceName,
         log.serialNo,
-        log.authMode === AuthMode.Face ? 'Face' : log.authMode === AuthMode.Vein ? 'Vein' : 'Dual',
-        log.isSuccess ? 'Success' : 'Failed',
+        log.authMode === AuthMode.Face ? '顔認証' : log.authMode === AuthMode.Vein ? '静脈認証' : '顔＋静脈認証',
+        log.isSuccess ? '成功' : '失敗',
         log.errorMessage || '',
       ];
     });
@@ -540,7 +541,7 @@ export const AuthHistory: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
-              placeholder="ユーザーID、名前、デバイス..."
+              placeholder="ユーザーID、ユーザー名、デバイスシリアル番号で検索..."
               className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -573,7 +574,7 @@ export const AuthHistory: React.FC = () => {
               <Search className="text-slate-400" />
             </div>
             <p className="font-medium">該当するログが見つかりません</p>
-            <p className="text-xs mt-1">日付フィルターやモード設定を見直してください。</p>
+            <p className="text-xs mt-1">日付フィルターや認証モードフィルター設定を見直してください。</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -588,10 +589,10 @@ export const AuthHistory: React.FC = () => {
                       任意
                     </span>
                   </th>
-                  <th className="px-6 py-3">デバイス/場所</th>
-                  <th className="px-6 py-3">認証方式</th>
-                  <th className="px-6 py-3">状態</th>
-                  <th className="px-6 py-3 text-right">詳細</th>
+                  <th className="px-6 py-3">デバイスシリアル番号</th>
+                  <th className="px-6 py-3">認証モード</th>
+                  <th className="px-6 py-3">認証結果</th>
+                  <th className="px-6 py-3 text-right">認証履歴詳細</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

@@ -125,7 +125,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="シリアル番号　/ 端末名 で検索..." 
+            placeholder="デバイスシリアル番号, デバイス名 で検索..." 
             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -133,7 +133,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
         </div>
         <button onClick={loadDevices} className="flex items-center justify-center space-x-2 px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-50 text-slate-600 text-sm">
           <RefreshCw size={16} />
-          <span>再読み込み</span>
+          <span>更新</span>
         </button>
       </div>
 
@@ -153,12 +153,12 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4">シリアル番号</th>
+                  <th className="px-6 py-4">デバイスシリアル番号</th>
                   <th className="px-6 py-4">デバイス名</th>
                   <th className="px-6 py-4">認証モード</th>
-                  <th className="px-6 py-4">状態</th>
-                  <th className="px-6 py-4">最終更新</th>
-                  <th className="px-6 py-4 text-right">操作</th>
+                  <th className="px-6 py-4">稼働状態</th>
+                  <th className="px-6 py-4">最終更新日時</th>
+                  <th className="px-6 py-4 text-right">制御操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
