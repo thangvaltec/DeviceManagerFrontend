@@ -154,7 +154,7 @@ export const DeviceList: React.FC<DeviceListProps> = ({ onEdit, onCreate, onView
               <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4">シリアル番号</th>
-                  <th className="px-6 py-4">端末名</th>
+                  <th className="px-6 py-4">デバイス名</th>
                   <th className="px-6 py-4">認証モード</th>
                   <th className="px-6 py-4">状態</th>
                   <th className="px-6 py-4">最終更新</th>

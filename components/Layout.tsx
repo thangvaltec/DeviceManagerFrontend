@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LogOut, Server, Menu, X, UserCircle, Users } from 'lucide-react';
+import { LogOut, Server, Menu, X, UserCircle, Users, History } from 'lucide-react';
 import { api } from '../services/apiClient';
 
 interface LayoutProps {
@@ -20,11 +20,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
   const NavItem = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
     <button
       onClick={() => { onNavigate(id); setMobileMenuOpen(false); }}
-      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-        activePage === id 
-          ? 'bg-blue-600 text-white shadow-md' 
-          : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-      }`}
+      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${activePage === id
+        ? 'bg-blue-600 text-white shadow-md'
+        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+        }`}
     >
       <Icon size={20} />
       <span className="font-medium">{label}</span>
@@ -39,18 +38,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
           <h1 className="text-xl font-bold tracking-tight">管理システム</h1>
           <p className="text-xs text-slate-400 mt-1">Valtec System</p>
         </div>
-        
+
         {currentUser && (
           <div className="px-6 py-4 bg-slate-700/50 border-b border-slate-700">
             <div className="flex items-center space-x-2 text-slate-300 mb-1">
               <UserCircle size={14} />
               <div className="flex flex-col">
-                  <span className="text-xs font-medium uppercase tracking-wider">User</span>
+                <span className="text-xs font-medium uppercase tracking-wider">User</span>
               </div>
             </div>
             <div className="flex justify-between items-center">
-                <p className="font-bold text-sm truncate">{currentUser.username}</p>
-                {isSuperAdmin && <span className="text-[10px] bg-red-600 px-1.5 py-0.5 rounded text-white">ADMIN</span>}
+              <p className="font-bold text-sm truncate">{currentUser.username}</p>
+              {isSuperAdmin && <span className="text-[10px] bg-red-600 px-1.5 py-0.5 rounded text-white">ADMIN</span>}
             </div>
           </div>
         )}
@@ -59,8 +58,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
           <div className="mb-4">
             <p className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Main Menu</p>
             <NavItem id="dashboard" label="デバイス一覧" icon={Server} />
+            <NavItem id="auth_history" label="認証履歴" icon={History} />
             {isSuperAdmin && (
-               <NavItem id="users" label="ユーザー管理" icon={Users} />
+              <NavItem id="users" label="ユーザー管理" icon={Users} />
             )}
           </div>
 
@@ -87,6 +87,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               <p className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Main Menu</p>
               <NavItem id="dashboard" label="デバイス一覧" icon={Server} />
+              <NavItem id="auth_history" label="認証履歴" icon={History} />
               {isSuperAdmin && (
                 <NavItem id="users" label="ユーザー管理" icon={Users} />
               )}
