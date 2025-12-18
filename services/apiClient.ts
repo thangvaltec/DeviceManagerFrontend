@@ -1,11 +1,11 @@
 // src/services/apiClient.ts
-// API client dﾃｹng chung cho toﾃn b盻・frontend
+// フロントエンド全体で使用する共通APIクライアント
 
-import { Device, DeviceLog, AdminUser } from "../types";
+import { Device, DeviceLog, AdminUser, AuthLog } from "../types";
 
-// ﾄ雪ｻ皇 base URL t盻ｫ bi蘯ｿn mﾃｴi trﾆｰ盻拵g Vite
+// Vite環境変数からベースURLを取得
 // - Dev:   VITE_API_BASE = http://10.200.2.29:5000
-// - Prod:  VITE_API_BASE = ""  (deploy chung v盻嬖 backend)
+// - Prod:  VITE_API_BASE = ""  (バックエンドと同じドメインにデプロイ)
 const RAW_API_BASE = import.meta.env.VITE_API_BASE || "";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 const CURRENT_USER_KEY = "currentUser";
@@ -57,7 +57,7 @@ function logout() {
   saveCurrentUser(null);
 }
 
-// ==== Ki盻ブ tr蘯｣ v盻・cho API getAuthMode (BodyCamera cﾅｩng dﾃｹng) ====
+// ==== API getAuthMode の戻り値型（ボディカメラも使用） ====
 export type AuthModeResponse = {
   authMode: number;
   deviceName: string;
@@ -93,7 +93,7 @@ async function getAllDevices(): Promise<Device[]> {
 
   const json = await res.json();
 
-  // Map t盻ｫ DB 竊・ki盻ブ Device trﾃｪn frontend
+  // DBレスポンスをフロントエンドのDevice型にマッピング
   return (json as any[]).map((d) => ({
     serialNo: d.serialNo,
     deviceName: d.deviceName,
@@ -105,7 +105,7 @@ async function getAllDevices(): Promise<Device[]> {
 
 // シリアルNoで1件のデバイスを検索する（暫定で全件取得後フィルタ）。
 async function getDevice(serialNo: string): Promise<Device | undefined> {
-  // T蘯｡m th盻拱: l蘯･y toﾃn b盻・r盻妬 filter (s盻・lﾆｰ盻｣ng thi蘯ｿt b盻・khﾃｴng nhi盻「 nﾃｪn OK)
+  // 暫定: 全件取得後フィルタ（デバイス数が少ないためOK）
   const list = await getAllDevices();
   return list.find((d) => d.serialNo === serialNo);
 }
@@ -141,13 +141,13 @@ async function createDevice(
   };
 }
 
-// ----- 5) Update device (DeviceEdit chế độ edit) -----
+// ----- 5) デバイス更新（DeviceEdit編集モード） -----
 // 既存デバイスを更新し、更新後の値を返却する。
 async function updateDevice(
   serialNo: string,
   data: Partial<Device>
 ): Promise<Device> {
-  // body g盻ｭi lﾃｪn ph蘯｣i ﾄ妥ｺng v盻嬖 model C# Device
+  // リクエストボディはC# DeviceモデルとJSON構造を一致させる
   const payload = {
     serialNo,
     deviceName: data.deviceName,
@@ -211,7 +211,7 @@ async function getLogs(serialNo: string): Promise<DeviceLog[]> {
 
   const json = await res.json();
 
-  // Map từ DB DeviceLog (SerialNo, Action, CreatedAt, ...) → DeviceLog frontend
+  // DBのDeviceLog (SerialNo, Action, CreatedAt, ...) をフロントエンドのDeviceLog型にマッピング
   return (json as any[]).map((log) => ({
     id: log.id ?? 0,
     serialNo: log.serialNo ?? "",
@@ -222,7 +222,34 @@ async function getLogs(serialNo: string): Promise<DeviceLog[]> {
   }));
 }
 
-// ----- 8) Quan ly admin users -----
+// Android証人機/ボディカメラクライアントからの認証ログを取得
+async function getAuthLogs(date?: string): Promise<AuthLog[]> {
+  const query = date ? `?date=${encodeURIComponent(date)}` : "";
+  const res = await fetch(`${API_BASE}/api/auth/logs${query}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`getAuthLogs error ${res.status}: ${text}`);
+  }
+
+  const json = await res.json();
+
+  return (json as any[]).map((log, index) => ({
+    id: log.id ?? index + 1,
+    timestamp: log.timestamp ?? log.createdAt ?? "",
+    userId: log.userId ?? log.user ?? "",
+    userName: log.userName ?? "",
+    deviceName: log.deviceName ?? log.device ?? "",
+    serialNo: log.serialNo ?? log.serial ?? "",
+    authMode: log.authMode ?? 0,
+    isSuccess: log.isSuccess ?? log.success ?? false,
+    errorMessage: log.errorMessage ?? log.message ?? log.error ?? "",
+  }));
+}
+
+// ----- 8) 管理者ユーザー管理 -----
 // 管理者ユーザー一覧を取得する。
 async function getUsers(): Promise<AdminUser[]> {
   const res = await fetch(`${API_BASE}/api/adminusers`, { method: "GET" });
@@ -268,7 +295,7 @@ async function deleteUser(id: number) {
   }
 }
 
-// ==== Export object api cho cac page dung y nhu mockBackend ====
+// ==== ページで使用するためのAPI関数オブジェクトをエクスポート ====
 export const api = {
   login,
   logout,
@@ -281,6 +308,7 @@ export const api = {
   updateDevice,
   deleteDevice,
   getLogs,
+  getAuthLogs,
 
   getUsers,
   createUser,
@@ -288,13 +316,14 @@ export const api = {
   deleteUser,
 };
 
-// Export ham le de import truc tiep
+// 個別関数を直接インポートできるようにエクスポート
 export {
   getAllDevices,
   deleteDevice,
   login,
   logout,
   getCurrentUser,
+  getAuthLogs,
   getUsers,
   createUser,
   updateUser,

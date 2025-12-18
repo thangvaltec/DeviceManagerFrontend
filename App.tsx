@@ -6,13 +6,15 @@ import { DeviceList } from './pages/DeviceList';
 import { DeviceEdit } from './pages/DeviceEdit';
 import { DeviceLogs } from './pages/DeviceLogs';
 import { UserList } from './pages/UserList';
+import { AuthHistory } from './pages/AuthHistory';
 
 type View = 
   | { type: 'LOGIN' }
   | { type: 'LIST' }
   | { type: 'EDIT', serialNo: string | null }
   | { type: 'LOGS', serialNo: string }
-  | { type: 'USER_LIST' };
+  | { type: 'USER_LIST' }
+  | { type: 'AUTH_HISTORY' };
 
 // 画面遷移のルートコンポーネント。ログイン状態に応じて各ページを切り替える。
 export default function App() {
@@ -51,6 +53,8 @@ export default function App() {
         );
       case 'USER_LIST':
         return <UserList />;
+      case 'AUTH_HISTORY':
+        return <AuthHistory />;
       default:
         return null;
     }
@@ -63,6 +67,7 @@ export default function App() {
   // Determine active page ID for Layout highlighting
   let activePageId = 'dashboard';
   if (view.type === 'USER_LIST') activePageId = 'users';
+  if (view.type === 'AUTH_HISTORY') activePageId = 'auth_history';
   // DeploymentGuide / CodeViewer đã bỏ
 
   return (
@@ -70,6 +75,7 @@ export default function App() {
       activePage={activePageId}
       onNavigate={(page) => {
         if (page === 'users') setView({ type: 'USER_LIST' });
+        else if (page === 'auth_history') setView({ type: 'AUTH_HISTORY' });
         else setView({ type: 'LIST' });
       }}
       onLogout={handleLogout}

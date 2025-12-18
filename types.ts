@@ -22,6 +22,18 @@ export interface DeviceLog {
   adminUser: string;
 }
 
+export interface AuthLog {
+  id: number;
+  timestamp: string;
+  userId: string;
+  userName?: string; // Optional: User's display name from database
+  deviceName: string;
+  serialNo: string;
+  authMode: AuthMode;
+  isSuccess: boolean;
+  errorMessage?: string;
+}
+
 export type UserRole = 'super_admin' | 'admin';
 
 export interface User {
