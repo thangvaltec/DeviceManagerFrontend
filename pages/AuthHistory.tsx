@@ -19,6 +19,10 @@ import {
   Download,
   History,
   Filter,
+  ChevronsLeft,
+  ChevronsRight,
+  ListOrdered,
+  Settings2,
 } from 'lucide-react';
 
 // --- ヘルパー関数 ---
@@ -370,6 +374,12 @@ export const AuthHistory: React.FC = () => {
   const [loading, setLoading] = useState(true);
   // 検索キーワード
   const [searchTerm, setSearchTerm] = useState('');
+  // 詳細モーダル表示用の選択されたログ
+  const [selectedLog, setSelectedLog] = useState<AuthLog | null>(null);
+
+  // --- 分割表示用のステート (Pagination State) ---
+  const [currentPage, setCurrentPage] = useState(1); // 現在のページ
+  const [pageSize, setPageSize] = useState(10);    // 1ページあたりの表示数
 
   // 選択中の日付（初期値: 今日）- タイムゾーンを考慮してYYYY-MM-DD形式で保持
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -382,8 +392,10 @@ export const AuthHistory: React.FC = () => {
   // 認証モードフィルター（ALL / Face / Vein / FaceAndVein）
   const [filterAuthMode, setFilterAuthMode] = useState<string>('ALL');
 
-  // 詳細モーダル表示用の選択されたログ
-  const [selectedLog, setSelectedLog] = useState<AuthLog | null>(null);
+  // フィルター条件が変わった際にページを1に戻す (Reset to page 1 on filter change)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDate, filterAuthMode, pageSize]);
 
   /**
    * 認証ログをAPIから取得し、日時降順でソート
@@ -392,14 +404,14 @@ export const AuthHistory: React.FC = () => {
   const loadLogs = async () => {
     setLoading(true);
     try {
-      const data = await api.getAuthLogs(selectedDate || undefined);
+      const data = await api.getAuthLogs(selectedDate);
       // 新しいログが上に来るように降順ソート
       const sorted = [...data].sort(
         (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       );
       setLogs(sorted);
-    } catch (e: any) {
-      console.error('Failed to load auth logs:', e);
+    } catch (error) {
+      console.error('Failed to load logs:', error);
     } finally {
       setLoading(false);
     }
@@ -414,7 +426,6 @@ export const AuthHistory: React.FC = () => {
    * 現在フィルター適用中のログをCSV形式でダウンロード
    * BOM付きUTF-8エンコーディングでExcelとの互換性を確保
    */
-  //CSV出力DeviceNameを非表示、今後追加するときに対応する
   const downloadCSV = () => {
     const headers = ['ID', 'Time', 'UserID', 'UserName', /*'DeviceName',*/ 'DeviceSerialNo', 'AuthMode', 'Result', 'Message'];
     const rows = filteredLogs.map((log) => {
@@ -427,8 +438,8 @@ export const AuthHistory: React.FC = () => {
         userName,
         //log.deviceName,
         log.serialNo,
-        log.authMode === AuthMode.Face ? '顔認証' : log.authMode === AuthMode.Vein ? '静脈認証' : '顔＋静脈認証',
-        log.isSuccess ? '成功' : '失敗',
+        log.authMode === AuthMode.Face ? 'Face' : log.authMode === AuthMode.Vein ? 'Vein' : 'Dual',
+        log.isSuccess ? 'Success' : 'Failed',
         log.errorMessage || '',
       ];
     });
@@ -451,22 +462,18 @@ export const AuthHistory: React.FC = () => {
 
   /**
    * ログのフィルタリング処理
-   * 以下の3つの条件を組み合わせて絞り込み:
-   * 1. 日付フィルター - selectedDateと一致
-   * 2. 認証モードフィルター - filterAuthModeと一致
-   * 3. テキスト検索 - ユーザーID、ユーザー名、デバイス名、シリアル番号で部分一致検索
    */
   const filteredLogs = logs.filter((log) => {
-    // 1. Date Filter
+    // 1. 日付フィルター
     if (selectedDate && !log.timestamp.startsWith(selectedDate)) return false;
 
-    // 2. Auth Mode Filter
+    // 2. 認証モードフィルター
     if (filterAuthMode !== 'ALL') {
       const mode = parseInt(filterAuthMode);
       if (log.authMode !== mode) return false;
     }
 
-    // 3. Search Term Filter
+    // 3. キーワード検索フィルター (ユーザーID、氏名、シリアル番号)
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       // @ts-ignore
@@ -474,25 +481,29 @@ export const AuthHistory: React.FC = () => {
       return (
         log.userId.toLowerCase().includes(term) ||
         uName.includes(term) ||
-        log.deviceName.toLowerCase().includes(term) ||
+        // log.deviceName.toLowerCase().includes(term) || // 以前の要望によりDeviceNameは検索対象外
         log.serialNo.toLowerCase().includes(term)
       );
     }
     return true;
   });
 
+  // --- 分割表示ロジック (Pagination Logic) ---
+  const totalItems = filteredLogs.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-slate-800">
-            <History size={20} className="text-slate-500" />
-            <h2 className="text-2xl font-bold">認証履歴</h2>
-          </div>
-          <p className="text-slate-500 text-sm mt-1">入退室およびデバイス認証のログを確認します。</p>
+        <div className="flex items-center gap-2 text-slate-800">
+          <History size={20} className="text-slate-500" />
+          <h2 className="text-2xl font-bold">認証履歴</h2>
         </div>
-
-        {/* CSV Download Button */}
+        <p className="text-slate-500 text-sm mt-1">入退室およびデバイス認証のログを確認します。</p>
         <button
           onClick={downloadCSV}
           className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm transition-colors text-sm font-medium"
@@ -502,9 +513,8 @@ export const AuthHistory: React.FC = () => {
         </button>
       </div>
 
-      {/* Toolbar */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
-        {/* Custom Date Picker */}
+        {/* Date Filter */}
         <div className="w-full md:w-auto z-10">
           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">日付フィルター</label>
           <CustomDatePicker value={selectedDate} onChange={setSelectedDate} />
@@ -549,6 +559,28 @@ export const AuthHistory: React.FC = () => {
           </div>
         </div>
 
+        {/* Records Per Page Filter */}
+        <div className="w-full md:w-auto min-w-[120px]">
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">表示数</label>
+          <div className="relative">
+            <ListOrdered className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(parseInt(e.target.value))}
+              className="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm appearance-none bg-white cursor-pointer font-bold"
+            >
+              <option value={5}>5件</option>
+              <option value={10}>10件</option>
+              <option value={25}>25件</option>
+              <option value={50}>50件</option>
+              <option value={100}>100件</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+              <Settings2 size={14} />
+            </div>
+          </div>
+        </div>
+
         {/* Refresh Button */}
         <div className="w-full md:w-auto self-end">
           <button
@@ -577,99 +609,154 @@ export const AuthHistory: React.FC = () => {
             <p className="text-xs mt-1">日付フィルターや認証モードフィルター設定を見直してください。</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 whitespace-nowrap">
-                <tr>
-                  <th className="px-6 py-3">日時</th>
-                  <th className="px-6 py-3">ユーザーID</th>
-                  <th className="px-6 py-3 flex items-center gap-1">
-                    ユーザー名
-                    <span className="text-[10px] text-slate-400 font-normal border border-slate-300 rounded px-1">
-                      任意
-                    </span>
-                  </th>
-                  <th className="px-6 py-3">デバイスシリアル番号</th>
-                  <th className="px-6 py-3">認証モード</th>
-                  <th className="px-6 py-3">認証結果</th>
-                  <th className="px-6 py-3 text-right">認証履歴詳細</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredLogs.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="hover:bg-slate-50 transition-colors group cursor-pointer"
-                    onClick={() => setSelectedLog(log)}
-                  >
-                    <td className="px-6 py-4 text-xs whitespace-nowrap font-medium text-slate-700">
-                      {formatDateTime(log.timestamp)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 text-slate-500 shrink-0">
-                          <UserIcon size={14} />
-                        </div>
-                        <span className="font-mono text-slate-800">{log.userId}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {/* @ts-ignore */}
-                      {log.userName ? (
-                        <span className="font-bold text-slate-700">{log.userName}</span>
-                      ) : (
-                        <span className="text-slate-400 italic text-xs">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-slate-900 font-medium">{log.deviceName}</span>
-                        <span className="text-xs text-slate-400 font-mono">{log.serialNo}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center text-xs">
-                        {log.authMode === AuthMode.Face && (
-                          <span className="flex items-center text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">
-                            <ScanFace size={14} className="mr-1" /> 顔認証
-                          </span>
-                        )}
-                        {log.authMode === AuthMode.Vein && (
-                          <span className="flex items-center text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-100">
-                            <Fingerprint size={14} className="mr-1" /> 静脈認証
-                          </span>
-                        )}
-                        {log.authMode === AuthMode.FaceAndVein && (
-                          <span className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                            <ShieldCheck size={14} className="mr-1" /> 顔＋静脈認証
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {log.isSuccess ? (
-                        <div className="flex items-center text-green-600 text-xs font-bold">
-                          <CheckCircle2 size={16} className="mr-1.5" />
-                          <span>成功</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-red-600 text-xs font-bold">
-                          <ShieldAlert size={16} className="mr-1.5" />
-                          <span>失敗</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <ChevronRight
-                        size={16}
-                        className="text-slate-300 ml-auto group-hover:text-blue-500 transition-colors"
-                      />
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 whitespace-nowrap">
+                  <tr>
+                    <th className="px-6 py-3">日時</th>
+                    <th className="px-6 py-3">ユーザーID</th>
+                    <th className="px-6 py-3 flex items-center gap-1">
+                      ユーザー名
+                      <span className="text-[10px] text-slate-400 font-normal border border-slate-300 rounded px-1">
+                        任意
+                      </span>
+                    </th>
+                    <th className="px-6 py-3">デバイスシリアル番号</th>
+                    <th className="px-6 py-3">認証モード</th>
+                    <th className="px-6 py-3">認証結果</th>
+                    <th className="px-6 py-3 text-right">認証履歴詳細</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedLogs.map((log) => (
+                    <tr
+                      key={log.id}
+                      className="hover:bg-slate-50 transition-colors group cursor-pointer"
+                      onClick={() => setSelectedLog(log)}
+                    >
+                      <td className="px-6 py-4 text-xs whitespace-nowrap font-medium text-slate-700">
+                        {formatDateTime(log.timestamp)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 text-slate-500 shrink-0">
+                            <UserIcon size={14} />
+                          </div>
+                          <span className="font-mono text-slate-800">{log.userId}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {/* @ts-ignore */}
+                        {log.userName ? (
+                          <span className="font-bold text-slate-700">{log.userName}</span>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          {/* log.deviceNameは現在Backendから取得できないため非表示にしています */}
+                          {/* <span className="text-slate-900 font-medium">{log.deviceName}</span> */}
+                          <span className="text-xs text-slate-400 font-mono">{log.serialNo}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center text-xs">
+                          {log.authMode === AuthMode.Face && (
+                            <span className="flex items-center text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">
+                              <ScanFace size={14} className="mr-1" /> 顔認証
+                            </span>
+                          )}
+                          {log.authMode === AuthMode.Vein && (
+                            <span className="flex items-center text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-100">
+                              <Fingerprint size={14} className="mr-1" /> 静脈認証
+                            </span>
+                          )}
+                          {log.authMode === AuthMode.FaceAndVein && (
+                            <span className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                              <ShieldCheck size={14} className="mr-1" /> 顔＋静脈認証
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {log.isSuccess ? (
+                          <div className="flex items-center text-green-600 text-xs font-bold">
+                            <CheckCircle2 size={16} className="mr-1.5" />
+                            <span>成功</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-red-600 text-xs font-bold">
+                            <ShieldAlert size={16} className="mr-1.5" />
+                            <span>失敗</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <ChevronRight
+                          size={16}
+                          className="text-slate-300 ml-auto group-hover:text-blue-500 transition-colors"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-sm text-slate-500 font-medium flex items-center gap-2">
+                <span>
+                  全 <span className="text-slate-900 font-bold">{totalItems}</span> 件中
+                  <span className="text-blue-600 font-bold mx-1">
+                    {totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1} -{' '}
+                    {Math.min(currentPage * pageSize, totalItems)}
+                  </span>{' '}
+                  件を表示
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="p-2 text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                  title="最初へ"
+                >
+                  <ChevronsLeft size={18} />
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-3 py-1 text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-all text-xs font-bold"
+                >
+                  <ChevronLeft size={18} /> 前ページ
+                </button>
+
+                <div className="flex items-center px-3 text-sm font-bold text-slate-700">
+                  {currentPage} / {totalPages || 1}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages || totalPages === 0}
+                  className="flex items-center gap-1 px-3 py-1 text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-all text-xs font-bold"
+                >
+                  次ページ <ChevronRight size={18} />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage >= totalPages || totalPages === 0}
+                  className="p-2 text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                  title="最後へ"
+                >
+                  <ChevronsRight size={18} />
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
